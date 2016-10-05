@@ -42,6 +42,8 @@ public struct ModelType {
 /// Model generator responsible for creation of models based on the JSON, needs to be initalized with all properties before proceeding.
 public class ModelGenerator {
 
+    let kNumSpaces = 40
+    
     //MARK: Variables
     var filePath: String
     var baseClassName: String
@@ -303,11 +305,11 @@ public class ModelGenerator {
     - returns: A generated string representing the name of the class in the model.
     */
     internal func buildClassName(className: String, prefix: String, isSubModule: Bool)  -> String {
-
+        var postfix = "Model"
         // If it is a submodule it is already formatted no need to camelcase it.
         var classNameCleaned = isSubModule ? className : variableNameBuilder(className)
         classNameCleaned.replaceRange(classNameCleaned.startIndex...classNameCleaned.startIndex, with: String(classNameCleaned[classNameCleaned.startIndex]).uppercaseString)
-        return prefix.stringByAppendingString(classNameCleaned)
+        return prefix.stringByAppendingString(classNameCleaned).stringByAppendingString(postfix)
     }
 
     /**
@@ -366,7 +368,9 @@ public class ModelGenerator {
      - returns: A generated string declaring the string constant for the key.
      */
     internal func stringConstantDeclrationBuilder(constantName: String, key: String) -> String {
-        return "\tinternal let \(constantName): String = \"\(key)\"\n"
+
+        let whitespace = String(count: kNumSpaces-constantName.characters.count, repeatedValue: (" " as Character))
+        return "\tinternal let \(constantName)\(whitespace): String = \"\(key)\"\n"
     }
 
 
@@ -379,11 +383,12 @@ public class ModelGenerator {
      - returns: A generated string for declaring the variable.
      */
     internal func variableDeclarationBuilder(variableName: String, type: String) -> String {
+        let whitespace = String(count: kNumSpaces-variableName.characters.count, repeatedValue: (" " as Character))
         if type == VariableType.kBoolType {
             return "\tpublic var \(variableName): \(type) = false\n"
         }
 
-        return "\tpublic var \(variableName): \(type)?\n"
+        return "\tpublic var \(variableName)\(whitespace): \(type)?\n"
     }
 
     //MARK: ObjectMapper Initalizer
@@ -395,7 +400,8 @@ public class ModelGenerator {
     - returns: A single line mapping for the variable
     */
     internal func mappingForObjectMapper(variableName: String, key: String) -> String {
-        return "\t\t\(variableName) <- map[\(key)]"
+        let whitespace = String(count: kNumSpaces-variableName.characters.count, repeatedValue: (" " as Character))
+        return "\t\t\(variableName)\(whitespace)<- map[\(key)]"
     }
 
     //MARK: SwiftyJSON Initalizer
@@ -469,7 +475,7 @@ public class ModelGenerator {
         if type == VariableType.kBoolType {
             return "\t\taCoder.encodeBool(\(variableName), forKey: \(key))"
         }
-        return "\t\taCoder.encodeObject(\(variableName), forKey: \(key))"
+        return "\t\taCoder.encode(\(variableName), forKey: \(key))"
     }
     /**
      Decoder for a variable.
@@ -481,7 +487,7 @@ public class ModelGenerator {
         if type == VariableType.kBoolType {
             return "\t\tself.\(variableName) = aDecoder.decodeBoolForKey(\(key))"
         }
-        return "\t\tself.\(variableName) = aDecoder.decodeObjectForKey(\(key)) as? \(type)"
+        return "\t\tself.\(variableName) = aDecoder.decodeObject(forKey:\(key)) as? \(type)"
     }
 
     //MARK: Description Generators
@@ -520,7 +526,7 @@ public class ModelGenerator {
      - returns: A single line declaration of the variable which is an array of primitive kind.
      */
     internal func descriptionForPrimitiveVariableArray(variableName: String, key: String) -> String {
-        return "\t\tif \(variableName)?.count > 0 {\n\t\t\tdictionary.updateValue(\(variableName)!, forKey: \(key))\n\t\t}"
+        return "\t\tif \(variableName)?.count > 0 {\n\t\t\tdictionary.updateValue(\(variableName)! as AnyObject, forKey: \(key))\n\t\t}"
     }
 
     /**
